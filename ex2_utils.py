@@ -404,3 +404,67 @@ def edgeDemo(image_path: str, sobel_thresh: float, canny_thrs1: float, canny_thr
 
     plt.tight_layout()
     plt.show()
+
+
+def houghCircle(img: np.ndarray, min_radius: float, max_radius: float, param1: float = 1, param2: float = 40,
+                min_dist: float = 100) -> list:
+    """
+    Find Circles in an image using a Hough Transform algorithm extension
+    :param img: Input image
+    :param min_radius: Minimum circle radius
+    :param max_radius: Maximum circle radius
+    :param param1: Higher threshold for Canny edge detector (lower threshold is twice smaller)
+    :param param2: Accumulator threshold for the circle centers at the detection stage
+    :param min_dist: Minimum distance between the centers of the detected circles
+    :return: A list containing the detected circles, [(x, y, radius), (x, y, radius), ...]
+    """
+    # Apply Gaussian Blur to reduce noise
+    blurred_img = cv2.GaussianBlur(img, (9, 9), 2)
+
+    # Apply Canny Edge Detector
+    edges = cv2.Canny(blurred_img, 100, 200)
+
+    # Detect circles using HoughCircles
+    circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1.2, minDist=min_dist,
+                               param1=param1, param2=param2, minRadius=int(min_radius), maxRadius=int(max_radius))
+
+    # Prepare the list of circles
+    circle_list = []
+    if circles is not None:
+        circles = np.round(circles[0, :]).astype("int")
+        for (x, y, r) in circles:
+            circle_list.append((x, y, r))
+
+    return circle_list
+
+
+def houghDemo(image_path: str, min_radius: float, max_radius: float):
+    """
+    Demonstrate the Hough Circle detection
+    :param image_path: Path to the input image
+    :param min_radius: Minimum circle radius
+    :param max_radius: Maximum circle radius
+    """
+
+
+    # Load the image
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    img = cv2.equalizeHist(img)
+
+    if img is None:
+        print("Error: Image not found or unable to load.")
+        return
+
+    # Detect circles
+    circles = houghCircle(img, min_radius, max_radius)
+    print("Detected circles:", circles)
+
+    # Draw circles on the image and display
+    output_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    for (x, y, r) in circles:
+        cv2.circle(output_img, (x, y), r, (0, 255, 0), 4)
+
+    # Display the result
+    plt.imshow(output_img)
+    plt.title('Hough Circle Detection')
+    plt.show()
